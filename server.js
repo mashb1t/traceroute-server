@@ -1,12 +1,17 @@
 const express = require('express')
 const server = express()
-const hostname = '127.0.0.1';
+const hostname = 'localhost';
 const port = 3000;
+const cors = require('cors');
 
 const Traceroute = require('nodejs-traceroute');
+const geoip = require('geoip-lite');
+
 
 server.use(express.json());
 // app.use(express.urlencoded());
+
+server.use(cors());
 
 server.get('/', (req, res) => {
     res.send('Hello World!')
@@ -16,6 +21,9 @@ server.post('/traceroute', (req, res) => {
     console.log(req.body);
 
     let trace = [];
+    let withGeoLocations = req.body.withGeoLocations ?? false;
+
+    console.log(withGeoLocations);
 
     try {
         const tracer = new Traceroute();
@@ -30,6 +38,10 @@ server.post('/traceroute', (req, res) => {
             .on('hop', (hop) => {
                 trace.push(hop);
                 console.log(`hop: ${JSON.stringify(hop)}`);
+
+                if (withGeoLocations) {
+                    hop.geolocations = (hop.ip === '*') ? null : geoip.lookup(hop.ip);
+                }
             })
             .on('close', (code) => {
                 console.log(`close: code ${code}`);
