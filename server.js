@@ -16,9 +16,9 @@ server.use(cors());
 let geoLocationCurrentIP;
 getPublicIp().then(function (ip) {
     let geoLocationData = geoip.lookup(ip);
+    geoLocationData.ip = ip;
     console.log("GeoLocation data:");
     console.log(geoLocationData);
-
     geoLocationCurrentIP = geoLocationData;
 });
 
