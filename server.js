@@ -22,34 +22,22 @@ server.post('/traceroute', (req, res) => {
 
         tracer
             .on('pid', (pid) => {
-                trace.push({
-                    'type': 'pid',
-                    'data': pid,
-                });
                 console.log(`pid: ${pid}`);
             })
             .on('destination', (destination) => {
-                trace.push({
-                    'type': 'destination',
-                    'data': destination,
-                });
                 console.log(`destination: ${destination}`);
             })
             .on('hop', (hop) => {
-                trace.push({
-                    'type': 'hop',
-                    'data': hop,
-                });
+                trace.push(hop);
                 console.log(`hop: ${JSON.stringify(hop)}`);
             })
             .on('close', (code) => {
-                trace.push({
-                    'type': 'close',
-                    'data': code,
-                });
                 console.log(`close: code ${code}`);
+                let exception = (code !== 0) ? `Exited with code ${code}` : null;
+
                 res.send({
-                    trace: trace
+                    exception: exception,
+                    data: trace
                 });
             });
 
@@ -59,7 +47,7 @@ server.post('/traceroute', (req, res) => {
         res.status(400);
         res.send({
             exception: ex,
-            trace: trace
+            data: trace
         });
     }
 })
