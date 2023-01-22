@@ -6,24 +6,31 @@ const cors = require('cors');
 
 const Traceroute = require('nodejs-traceroute');
 const geoip = require('geoip-lite');
-
+const http = require('http');
 
 server.use(express.json());
 // app.use(express.urlencoded());
 
 server.use(cors());
 
+let geoLocationCurrentIP;
+getPublicIp().then(function (ip) {
+    let geoLocationData = geoip.lookup(ip);
+    console.log("GeoLocation data:");
+    console.log(geoLocationData);
+
+    geoLocationCurrentIP = geoLocationData;
+});
+
 server.get('/', (req, res) => {
     res.send('Traceroute Server')
 })
 
 server.post('/traceroute', (req, res) => {
-    console.log(req.body);
-
     let trace = [];
     let withGeoLocations = req.body.withGeoLocations ?? false;
-
-    console.log(withGeoLocations);
+    console.log(`withGeoLocations: ${withGeoLocations}`);
+    console.log(req.body);
 
     try {
         const tracer = new Traceroute();
@@ -43,23 +50,23 @@ server.post('/traceroute', (req, res) => {
                     hop.geolocations = (hop.ip === '*') ? null : geoip.lookup(hop.ip);
                 }
             })
-            .on('close', (code) => {
+            .on('close', async (code) => {
                 console.log(`close: code ${code}`);
                 let exception = (code !== 0) ? `Exited with code ${code}` : null;
 
                 res.send({
                     exception: exception,
-                    data: trace
+                    data: trace,
+                    currentGeoLocation: withGeoLocations ? geoLocationCurrentIP : null
                 });
             });
 
         tracer.trace(req.body.target);
-    } catch (ex) {
-        console.log(ex);
+    } catch (exception) {
+        console.log(exception);
         res.status(400);
         res.send({
-            exception: ex,
-            data: trace
+            exception: exception
         });
     }
 })
@@ -67,3 +74,15 @@ server.post('/traceroute', (req, res) => {
 server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
 })
+
+function getPublicIp() {
+    return new Promise(resolve => {
+        http.get({'host': 'api.ipify.org', 'port': 80, 'path': '/'}, function (resp) {
+            resp.on('data', function (ip) {
+                console.log("Public IP address: " + ip);
+                resolve(`${ip}`);
+            });
+        });
+    });
+}
+
