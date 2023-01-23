@@ -1,6 +1,6 @@
 const express = require('express')
 const server = express()
-const hostname = 'localhost';
+const hostname = '0.0.0.0';
 const port = 3000;
 const cors = require('cors');
 
@@ -44,11 +44,11 @@ server.post('/traceroute', (req, res) => {
             })
             .on('hop', (hop) => {
                 trace.push(hop);
-                console.log(`hop: ${JSON.stringify(hop)}`);
 
                 if (withGeoLocations) {
                     hop.geolocations = (hop.ip === '*') ? null : geoip.lookup(hop.ip);
                 }
+                console.log(`hop: ${JSON.stringify(hop)}`);
             })
             .on('close', async (code) => {
                 console.log(`close: code ${code}`);
